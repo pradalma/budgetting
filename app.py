@@ -258,7 +258,7 @@ def export_pdf_bytes(incomes: List[LineItem],
 
 # ---------- Streamlit UI ----------
 
-st.set_page_config(page_title="Turner–Pradal Budget Planner", page_icon="💸", layout="wide")
+st.set_page_config(page_title="Budget Planner", page_icon="💸", layout="wide")
 
 st.title("Family Budget Planner (Web)")
 st.caption("CSV-first • Pie chart with smart labels • PDF report (chart embedded)")
@@ -266,7 +266,7 @@ st.caption("CSV-first • Pie chart with smart labels • PDF report (chart embe
 with st.expander("Options", expanded=True):
     default_csv_name = "Family_budget.csv"
     csv_filename = st.text_input("CSV filename (for download name)", value=default_csv_name, help="Used as the suggested filename when you download the CSV.")
-    pdf_filename = st.text_input("PDF filename (for download name)", value="TurnerPradal_budget_summary.pdf", help="Used as the suggested filename when you download the PDF.")
+    pdf_filename = st.text_input("PDF filename (for download name)", value="budget_summary.pdf", help="Used as the suggested filename when you download the PDF.")
     show_chart = st.checkbox("Show chart below", value=True)
     embed_chart_in_pdf = st.checkbox("Embed pie chart in the PDF", value=True)
 
