@@ -216,7 +216,7 @@ def export_pdf_bytes(incomes: List[LineItem],
             fig, ax = plt.subplots(figsize=(8.5, 11))
             ax.axis("off")
             y = 0.95
-            ax.text(0.5, y, f"Turner–Pradal Family Budget — {month}",
+            ax.text(0.5, y, f"Family Budget — {month}",
                     ha="center", va="top", fontsize=18, fontweight="bold"); y -= 0.06
             ax.text(0.05, y, f"Total Monthly Income : {money(inc_total_m)}", fontsize=12); y -= 0.04
             ax.text(0.05, y, f"Total Monthly Expenses: {money(exp_total_m)}", fontsize=12); y -= 0.04
