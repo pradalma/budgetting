@@ -142,7 +142,6 @@ def export_pdf_bytes(incomes: List[LineItem],
     Try ReportLab for pretty tables + embedded chart; fallback to Matplotlib-only PDF.
     Returns PDF as bytes.
     """
-    # Try ReportLab
     try:
         from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image as RLImage, PageBreak
         from reportlab.lib import colors
@@ -191,7 +190,6 @@ def export_pdf_bytes(incomes: List[LineItem],
             ["Total Monthly Expenses", money(exp_total_m)],
             ["Monthly Balance (Income - Expenses)", money(balance_m)],
         ]
-        from reportlab.platypus import Table
         t = Table(summary_data, colWidths=[260, 180])
         t.setStyle(TableStyle([
             ('GRID',(0,0),(-1,-1),0.5,colors.black),
@@ -203,11 +201,8 @@ def export_pdf_bytes(incomes: List[LineItem],
         if chart_png_bytes:
             elems.append(PageBreak())
             elems.append(Paragraph("<b>Monthly Expenses Pie Chart</b>", styles['Heading2']))
-            # Save into temp in-memory file for RLImage
             img_buf = io.BytesIO(chart_png_bytes)
-            # Width fit: ~7in
             max_w = 7.0 * inch
-            # No exact size unless we inspect; let ReportLab scale by width
             elems.append(RLImage(img_buf, width=max_w, height=max_w))  # square-ish
 
         doc.build(elems)
@@ -297,13 +292,17 @@ income_df = st.data_editor(
 
 st.markdown("### Expenses")
 if "expense_df" not in st.session_state:
+    expense_names = [
+        "Mortgage","Pet insurance","Car insurance","Water bill","Electric bill",
+        "therapy","childcare","meds","doctor","lessons",
+        "kid1","kid2","kid3",  # <-- fixed comma here
+        "Gas (car)","Food","Unnecessary stuff","TV","Cell phones"
+    ]
+    n = len(expense_names)
     st.session_state.expense_df = pd.DataFrame({
-        "name": [
-            "Mortgage","Pet insurance","Car insurance","Water bill","Electric bill",
-            "therapy","childcare","meds","doctor","lessons","kid1", "kid2", "kid3"
-            "Gas (car)","Food","Unnecessary stuff","TV","Cell phones"],
-        "amount": [0.0]*16,
-        "frequency": pd.Categorical(["monthly"]*16, categories=FREQ_CHOICES)
+        "name": expense_names,
+        "amount": [0.0]*n,
+        "frequency": pd.Categorical(["monthly"]*n, categories=FREQ_CHOICES)
     })
 
 expense_df = st.data_editor(
@@ -383,4 +382,3 @@ st.download_button(
 )
 
 st.caption("Tip: Share this app by uploading it to Streamlit Community Cloud or running it locally with `streamlit run app.py`.")
-st
