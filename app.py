@@ -156,7 +156,7 @@ def export_pdf_bytes(incomes: List[LineItem],
         elems = []
 
         month = date.today().strftime("%B %Y")
-        elems.append(Paragraph(f"<b>Turner–Pradal Family Budget — {month}</b>", styles['Title']))
+        elems.append(Paragraph(f"<b>Family Budget — {month}</b>", styles['Title']))
         elems.append(Spacer(1, 12))
 
         def make_table(title: str, items: List[LineItem]):
