@@ -265,11 +265,11 @@ def export_pdf_bytes(incomes: List[LineItem],
 
 st.set_page_config(page_title="Turner–Pradal Budget Planner", page_icon="💸", layout="wide")
 
-st.title("Barksdale Budget Planner (Web)")
+st.title("Family Budget Planner (Web)")
 st.caption("CSV-first • Pie chart with smart labels • PDF report (chart embedded)")
 
 with st.expander("Options", expanded=True):
-    default_csv_name = "Barksdale_budget.csv"
+    default_csv_name = "Family_budget.csv"
     csv_filename = st.text_input("CSV filename (for download name)", value=default_csv_name, help="Used as the suggested filename when you download the CSV.")
     pdf_filename = st.text_input("PDF filename (for download name)", value="TurnerPradal_budget_summary.pdf", help="Used as the suggested filename when you download the PDF.")
     show_chart = st.checkbox("Show chart below", value=True)
@@ -278,7 +278,7 @@ with st.expander("Options", expanded=True):
 st.markdown("### Income")
 if "income_df" not in st.session_state:
     st.session_state.income_df = pd.DataFrame({
-        "name": ["Matt - income", "Erin - income"],
+        "name": ["Mom - income", "Dad - income"],
         "amount": [0.0, 0.0],
         "frequency": pd.Categorical(["monthly", "monthly"], categories=FREQ_CHOICES)
     })
