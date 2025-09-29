@@ -300,8 +300,8 @@ if "expense_df" not in st.session_state:
     st.session_state.expense_df = pd.DataFrame({
         "name": [
             "Mortgage","Pet insurance","Car insurance","Water bill","Electric bill",
-            "ABA therapy","MA therapy","MA psy","MA PT","Swim lessons",
-            "Gas (car)","Food","Unnecessary stuff","TV","Cell phones","Doctor fee",
+            "therapy","childcare","meds","doctor","lessons",kid1, kid2, kid3
+            "Gas (car)","Food","Unnecessary stuff","TV","Cell phones",
         ],
         "amount": [0.0]*16,
         "frequency": pd.Categorical(["monthly"]*16, categories=FREQ_CHOICES)
