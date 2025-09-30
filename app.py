@@ -298,7 +298,7 @@ if "expense_df" not in st.session_state:
         "kid1","kid2","kid3","kid4", # <-- fixed comma here
         "Gas (car)","Food","Unnecessary stuff","TV","Cell phones",
         "Internet","kids clothing","grown up clothing","gym/pool",
-        "car/maintenance","emergency savings", "kids college plan",
+        "car/maintenance","emergency savings", "kids future/college plan",
         "yard/lawn maintenance","birthdays",
         "oh no, that was not planned!"
     ]
