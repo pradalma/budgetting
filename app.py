@@ -295,7 +295,7 @@ if "expense_df" not in st.session_state:
     expense_names = [
         "Mortgage","Pet insurance","Car insurance","Water bill","Electric bill",
         "therapy","childcare","meds","doctor","lessons",
-        "kid1","kid2","kid3",  # <-- fixed comma here
+        "kid1","kid2","kid3","kid4", # <-- fixed comma here
         "Gas (car)","Food","Unnecessary stuff","TV","Cell phones"
     ]
     n = len(expense_names)
