@@ -299,7 +299,7 @@ if "expense_df" not in st.session_state:
         "Gas (car)","Food","Unnecessary stuff","TV","Cell phones",
         "Internet","kids clothing","grown up clothing","gym/pool",
         "car/maintenance","emergency savings", "kids college plan",
-        "yard/lawn maintenance",
+        "yard/lawn maintenance","birthdays",
         "oh no, that was not planned!"
     ]
     n = len(expense_names)
