@@ -273,9 +273,9 @@ with st.expander("Options", expanded=True):
 st.markdown("### Income")
 if "income_df" not in st.session_state:
     st.session_state.income_df = pd.DataFrame({
-        "name": ["Mom - income", "Dad - income", "dividends"],
-        "amount": [0.0, 0.0, 0.0],
-        "frequency": pd.Categorical(["monthly", "monthly", "annual"], categories=FREQ_CHOICES)
+        "name": ["Mom - income", "Dad - income", "dividends", "bonus"],
+        "amount": [0.0, 0.0, 0.0, 0.0],
+        "frequency": pd.Categorical(["monthly", "monthly", "annual", "once"], categories=FREQ_CHOICES)
     })
 
 income_df = st.data_editor(
