@@ -4,7 +4,7 @@ import os
 import math
 from dataclasses import dataclass
 from datetime import date
-from typing import List, Tuple, Optional
+from typing import List, Optional
 
 import streamlit as st
 import pandas as pd
@@ -256,12 +256,73 @@ def export_pdf_bytes(incomes: List[LineItem],
 
         return out.getvalue()
 
+# ---------- Month-to-month tracking (NEW) ----------
+
+HISTORY_PATH = "budget_history.csv"  # change to a full path if desired
+
+def month_start(d: date) -> date:
+    return d.replace(day=1)
+
+def snapshot_rows(month: date,
+                  incomes: List[LineItem],
+                  expenses: List[LineItem]) -> pd.DataFrame:
+    rows = []
+    mkey = month_start(month).isoformat()
+    for it in incomes:
+        rows.append({"month": mkey, "type": "income", "name": it.name,
+                     "monthly_amount": round2(it.monthly_amount())})
+    for it in expenses:
+        rows.append({"month": mkey, "type": "expense", "name": it.name,
+                     "monthly_amount": round2(it.monthly_amount())})
+    return pd.DataFrame(rows)
+
+def load_history(path: str = HISTORY_PATH) -> pd.DataFrame:
+    if os.path.exists(path):
+        df = pd.read_csv(path, dtype={"month": str, "type": str, "name": str})
+        df["monthly_amount"] = pd.to_numeric(df["monthly_amount"], errors="coerce").fillna(0.0)
+        return df
+    return pd.DataFrame(columns=["month","type","name","monthly_amount"])
+
+def save_snapshot(df_snap: pd.DataFrame, path: str = HISTORY_PATH) -> None:
+    hist = load_history(path)
+    if not hist.empty:
+        hist = hist[hist["month"] != df_snap["month"].iloc[0]]  # replace this month
+        out = pd.concat([hist, df_snap], ignore_index=True)
+    else:
+        out = df_snap.copy()
+    out.sort_values(["month","type","name"], inplace=True)
+    out.to_csv(path, index=False)
+
+def totals_by_month(path: str = HISTORY_PATH) -> pd.DataFrame:
+    hist = load_history(path)
+    if hist.empty:
+        return pd.DataFrame(columns=["month","income","expense","balance","month_dt"])
+    g = hist.groupby(["month","type"])["monthly_amount"].sum().unstack(fill_value=0.0)
+    g = g.rename(columns={"income":"income","expense":"expense"}).reset_index()
+    g["balance"] = g["income"] - g["expense"]
+    g["month_dt"] = pd.to_datetime(g["month"])
+    g.sort_values("month_dt", inplace=True)
+    return g[["month","income","expense","balance","month_dt"]]
+
+def expenses_by_category_month(path: str = HISTORY_PATH) -> pd.DataFrame:
+    hist = load_history(path)
+    if hist.empty:
+        return pd.DataFrame()
+    exp = hist[hist["type"]=="expense"].copy()
+    if exp.empty:
+        return pd.DataFrame()
+    exp["month_dt"] = pd.to_datetime(exp["month"])
+    piv = exp.pivot_table(index="month_dt", columns="name", values="monthly_amount",
+                          aggfunc="sum", fill_value=0.0)
+    piv.sort_index(inplace=True)
+    return piv
+
 # ---------- Streamlit UI ----------
 
 st.set_page_config(page_title="Budget Planner", page_icon="💸", layout="wide")
 
 st.title("Family Budget Planner (Web)")
-st.caption("CSV-first • Pie chart with smart labels • PDF report (chart embedded)")
+st.caption("CSV-first • Pie chart with smart labels • PDF report • Month-over-month tracking")
 
 with st.expander("Options", expanded=True):
     default_csv_name = "Family_budget.csv"
@@ -295,7 +356,7 @@ if "expense_df" not in st.session_state:
     expense_names = [
         "Mortgage","Pet insurance","Car insurance","Water bill","Electric bill",
         "therapy","childcare","meds","doctor","lessons",
-        "kid1","kid2","kid3","kid4", # <-- fixed comma here
+        "kid1","kid2","kid3","kid4",
         "Gas (car)","Food","Unnecessary stuff","TV","Cell phones",
         "Internet","kids clothing","grown up clothing","gym/pool",
         "car/maintenance","emergency savings", "kids future/college plan",
@@ -355,7 +416,7 @@ fig = make_expense_pie(expenses)
 if fig and show_chart:
     st.pyplot(fig, use_container_width=False)
 
-# Always create chart bytes if embedding requested or if user wants to download image later
+# Always create chart bytes if embedding requested
 if fig and embed_chart_in_pdf:
     buf = io.BytesIO()
     fig.savefig(buf, format="png", bbox_inches="tight", dpi=160)
@@ -384,5 +445,85 @@ st.download_button(
     mime="application/pdf",
     help="PDF includes income & expense tables, totals, and (optionally) the pie chart."
 )
+
+# ---------- Monthly Tracker UI ----------
+
+st.divider()
+st.header("📈 Monthly Tracker")
+
+default_month = month_start(date.today())
+chosen_month = st.date_input(
+    "Snapshot month",
+    value=default_month,
+    help="Choose which month these numbers apply to."
+)
+
+colA, colB = st.columns([1,1])
+
+with colA:
+    if st.button("💾 Save snapshot for selected month"):
+        snap = snapshot_rows(chosen_month, incomes, expenses)
+        save_snapshot(snap, HISTORY_PATH)
+        st.success(f"Saved {len(snap)} rows for {month_start(chosen_month).strftime('%B %Y')}")
+
+with colB:
+    if st.button("🧹 Clear this month from history"):
+        hist = load_history(HISTORY_PATH)
+        mkey = month_start(chosen_month).isoformat()
+        n_before = len(hist)
+        hist = hist[hist["month"] != mkey]
+        hist.to_csv(HISTORY_PATH, index=False)
+        n_removed = n_before - len(hist)
+        st.warning(f"Removed {n_removed} rows for {month_start(chosen_month).strftime('%B %Y')}")
+
+hist_totals = totals_by_month(HISTORY_PATH)
+if hist_totals.empty:
+    st.info("No history yet. Save a snapshot to start tracking month over month.")
+else:
+    st.subheader("Totals by Month")
+    show_tbl = hist_totals[["month","income","expense","balance"]].copy()
+    show_tbl["income"]  = show_tbl["income"].map(money)
+    show_tbl["expense"] = show_tbl["expense"].map(money)
+    show_tbl["balance"] = show_tbl["balance"].map(money)
+    st.dataframe(show_tbl, use_container_width=True)
+
+    # Line chart: Income, Expenses, Balance
+    fig_line, ax_line = plt.subplots(figsize=(8, 4))
+    ax_line.plot(hist_totals["month_dt"], hist_totals["income"],  label="Income")
+    ax_line.plot(hist_totals["month_dt"], hist_totals["expense"], label="Expenses")
+    ax_line.plot(hist_totals["month_dt"], hist_totals["balance"], label="Balance")
+    ax_line.set_title("Income vs Expenses vs Balance by Month")
+    ax_line.set_xlabel("Month")
+    ax_line.set_ylabel("USD")
+    ax_line.legend()
+    ax_line.grid(True, alpha=0.3)
+    fig_line.tight_layout()
+    st.pyplot(fig_line)
+    plt.close(fig_line)
+
+    # Stacked bars: expenses by category over months
+    exp_piv = expenses_by_category_month(HISTORY_PATH)
+    if not exp_piv.empty:
+        st.subheader("Expenses by Category (stacked)")
+        fig_stack, ax_stack = plt.subplots(figsize=(8, 5))
+        bottom = np.zeros(len(exp_piv))
+        for col in exp_piv.columns:
+            ax_stack.bar(exp_piv.index, exp_piv[col], bottom=bottom, label=col)
+            bottom += exp_piv[col].values
+        ax_stack.set_title("Stacked Expenses by Category")
+        ax_stack.set_xlabel("Month")
+        ax_stack.set_ylabel("USD")
+        ax_stack.legend(ncol=2, fontsize=8)
+        fig_stack.tight_layout()
+        st.pyplot(fig_stack)
+        plt.close(fig_stack)
+
+    st.download_button(
+        "⬇️ Download History CSV",
+        data=load_history(HISTORY_PATH).to_csv(index=False).encode("utf-8"),
+        file_name="budget_history.csv",
+        mime="text/csv",
+        help="Full long-form history (one row per item per month)."
+    )
 
 st.caption("Tip: Share this app by uploading it to Streamlit Community Cloud or running it locally with `streamlit run app.py`.")
